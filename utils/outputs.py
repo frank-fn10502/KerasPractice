@@ -73,6 +73,7 @@ class ModelOuputHelper:
 
         loc_mini: 'upper left' or 'upper right'
         '''
+
         plt.subplot(*pos)
         plt.title(title)
         plt.xlabel('epoch')
@@ -85,25 +86,24 @@ class ModelOuputHelper:
         
         for datas ,sign in plotDatas:
             xticks_end = max(xticks_end ,len(datas))
-            temp = []
-            temp.extend(datas)
-            temp.append(yticks_end)
-            yticks_end = max(temp)
-            yticks_start = min(temp)
+            yticks_end = max(max(datas) ,yticks_end)
+            yticks_start = min(min(datas) ,yticks_start)
 
             plt.plot(datas ,sign)
         
         plt.legend(['train', 'test'], loc=loc_mini)
         plt.xlim([xticks_start,xticks_end])
         plt.ylim([yticks_start,yticks_end])
-
-        plt.xticks([i for i in range(xticks_start ,xticks_end + 1 ,min(5 ,(xticks_start + xticks_end) / 10))]
-            ,rotation=90)
+        
+        x_range = max(10 ,(xticks_start + xticks_end) / 20)
+        x_tick_list = np.arange(xticks_start ,xticks_end ,x_range)
+        x_tick_list = np.append(x_tick_list ,xticks_end)
+        plt.xticks(x_tick_list,rotation=90)
 
         y_range = (yticks_start + yticks_end) / 10
-        y_ytick_list = np.arange(yticks_start ,yticks_end - y_range ,y_range)
-        y_ytick_list = np.append(y_ytick_list ,yticks_end)
-        plt.yticks( y_ytick_list )
+        y_tick_list = np.arange(yticks_start ,yticks_end - y_range ,y_range)
+        y_tick_list = np.append(y_tick_list ,yticks_end)
+        plt.yticks( y_tick_list )
         
 
     def drawModelImg(self) -> None:
