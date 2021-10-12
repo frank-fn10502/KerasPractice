@@ -4,6 +4,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import datetime
 import numpy as np
+import sys
 
 class ModelOuputHelper:
     '''
@@ -42,39 +43,41 @@ class ModelOuputHelper:
         plt.figure(figsize = (15,5))
         
         
-        self. __pltOnePlot('loss' ,(1,2,1),
+        self.__pltOnePlot('loss' ,(1,2,1),
         [
             [history['loss'] ,'-'],
             [history['val_loss'] ,'--'],
-        ])
-        self. __pltOnePlot('accuracy' ,(1,2,2),
+        ],loc_mini='upper right')
+        self.__pltOnePlot('accuracy' ,(1,2,2),
         [
             [history['accuracy'] ,'-'],
             [history['val_accuracy'] ,'--'],
         ])
-        
 
         plt.savefig(f'{self.save_train_result_dir}/train-progress.jpg')
         plt.show()
 
         print('drawTrainProcess... Done')
 
-    def __pltOnePlot(self,title, pos, plotDatas: list):
+    def __pltOnePlot(self,title, pos, plotDatas: list,loc_mini:str = 'upper left'):
         '''
         pos: 
             ex: (1,2,1)
+
         plotDatas:
             ex:
             [
                 [[...] ,'--'],
                 [[...] ,'-'],
             ]
+
+        loc_mini: 'upper left' or 'upper right'
         '''
         plt.subplot(*pos)
         plt.title(title)
         plt.xlabel('epoch')
         plt.ylabel('loss')
-        plt.grid(True)
+        plt.grid(True,linestyle = "--",color = 'gray' ,linewidth = '0.5')
         xticks_start = 0
         xticks_end = 0
         yticks_start = sys.maxsize
@@ -90,13 +93,17 @@ class ModelOuputHelper:
 
             plt.plot(datas ,sign)
         
-        plt.legend(['train', 'test'], loc='upper left')
-        plt.xticks(np.arange(xticks_start, xticks_end + 1, 
-            (xticks_start + xticks_end) / 10
-        ))
-        plt.yticks(np.arange(yticks_start, yticks_end + 1, 
-            (yticks_start + yticks_end )/ 10
-        ))
+        plt.legend(['train', 'test'], loc=loc_mini)
+        plt.xlim([xticks_start,xticks_end])
+        plt.ylim([yticks_start,yticks_end])
+
+        plt.xticks([i for i in range(xticks_start ,xticks_end + 1 ,min(5 ,(xticks_start + xticks_end) / 10))]
+            ,rotation=90)
+
+        y_range = (yticks_start + yticks_end) / 10
+        y_ytick_list = np.arange(yticks_start ,yticks_end - y_range ,y_range)
+        y_ytick_list = np.append(y_ytick_list ,yticks_end)
+        plt.yticks( y_ytick_list )
         
 
     def drawModelImg(self) -> None:
