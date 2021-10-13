@@ -15,7 +15,10 @@ RUN TZ=Asia/Taipei \
 
 RUN pip install matplotlib && \
     pip install autopep8 && \
-    pip install opencv-python-headless
+    
+    #for docker
+    pip install opencv-python-headless 
+    
 
 # 為了畫 MODEL 架構圖
 RUN pip install pydot && \
