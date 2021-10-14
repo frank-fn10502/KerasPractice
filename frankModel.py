@@ -1,3 +1,4 @@
+from os import X_OK
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -253,8 +254,8 @@ class VGG16(BasicModel):
         return x
 
 
-class Inception(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST') -> None:
+class InceptionV1(BasicModel):
+    def __init__(self, input_shape=(227, 227, 3), classes=10, datasetName='MNIST') -> None:
         super().__init__(datasetName, input_shape, classes)
 
         self.model = self.__build()
@@ -263,11 +264,60 @@ class Inception(BasicModel):
     def __build(self):
         inputs = keras.Input(shape=self.input_shape)   
         
-        x = None
-        pass
+        x = self.layer_scale(inputs)
+        
+        x = layers.Conv2D(kernel_size=7 ,strides=2 ,filters=64 ,activation='relu')(x)
+        #https://keras.io/api/layers/pooling_layers/max_pooling2d/
+        x = layers.MaxPool2D(pool_size=3 ,strides=2, padding='same')(x)
+        x = layers.Conv2D(kernel_size=3, strides=1, filters=192, padding='same', activation='relu')(x)
+        x = layers.MaxPool2D(pool_size=3 ,strides=2, padding='same')(x)
+
+
+        x = self.__Inception(x ,64 ,(96,128) ,(16 ,32) ,32)
+        x = self.__Inception(x ,128 ,(128,192) ,(32 ,96) ,64)
+
+
+        x = layers.MaxPool2D(pool_size=3 ,strides=2, padding='same')(x)
+
+
+        x = self.__Inception(x ,192 ,(96,208) ,(16 ,48) ,64)
+        x = self.__Inception(x ,160 ,(112,224) ,(24 ,64) ,64)
+        x = self.__Inception(x ,128 ,(128,256) ,(24 ,64) ,64)
+        x = self.__Inception(x ,112 ,(144,288) ,(32 ,64) ,64)
+        x = self.__Inception(x ,256 ,(160,320) ,(32 ,128) ,128)
+
+
+        x = layers.MaxPool2D(pool_size=3 ,strides=2, padding='same')(x)
+
+
+        x = self.__Inception(x ,256 ,(160,320) ,(32 ,128) ,128)
+        x = self.__Inception(x ,384 ,(192,384) ,(48 ,128) ,128)
+
+
+        x = layers.GlobalAveragePooling2D(data_format='channels_last')(x)
+        x = layers.Dropout(.4)(x)
     
         outputs = layers.Dense(self.classes, activation=activations.softmax)(x)
 
         model = keras.Model(inputs=inputs, outputs=outputs , name="frank_Inception")
         model.summary()
         return model
+
+    def __Inception(self, x, *depth):
+        '''
+        *depth: [conv1x1 ,(c3x3_r ,c3x3) ,(c5x5_r,c5x5) ,c1x1_pool]
+        '''
+        conv1x1 ,(c3x3_r ,c3x3) ,(c5x5_r,c5x5) ,c1x1_pool = depth
+
+        b1x1 = layers.Conv2D(kernel_size=(1, 1), filters=conv1x1, padding="same", activation='relu')(x)
+
+        b3x3 = layers.Conv2D(kernel_size=(1, 1), filters=c3x3_r, padding="same", activation='relu')(x)
+        b3x3 = layers.Conv2D(kernel_size=(3, 3), filters=c3x3, padding="same", activation='relu')(b3x3)
+
+        b5x5 = layers.Conv2D(kernel_size=(1, 1), filters=c5x5_r, padding="same", activation='relu')(x)
+        b5x5 = layers.Conv2D(kernel_size=(5, 5), filters=c5x5, padding="same", activation='relu')(b5x5)
+
+        pool = layers.MaxPool2D(pool_size=3 ,strides=1, padding='same')(x)
+        pool = layers.Conv2D(kernel_size=(1, 1), filters=c1x1_pool, padding="same", activation='relu' )(pool)
+
+        return layers.concatenate([b1x1, b3x3, b5x5 ,pool],axis=3)
