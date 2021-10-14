@@ -59,6 +59,10 @@ class ModelOuputHelper:
 
         print('drawTrainProcess... Done')
 
+        self.__saveTrainHistory(history)
+
+        print('saveTrainHistory... Done')
+
     def __pltOnePlot(self,title, pos, plotDatas: list,loc_mini:str = 'upper left'):
         '''
         pos: 
@@ -135,3 +139,9 @@ class ModelOuputHelper:
             self.model.summary(print_fn=lambda x: print(x, file=f))
 
         print('saveModelTxT... Done')
+
+    def __saveTrainHistory(self ,history:dict):
+        path = f'{self.save_train_result_dir}/trainHistory.txt'
+        with open(path,'w') as f:
+            for k ,v in history.items():
+                print(f'{k}: {v} \n\r', file=f)
