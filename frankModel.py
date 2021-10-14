@@ -26,6 +26,8 @@ class BasicModel:
             self._BasicModel__createOutputHelper()
         
         '''
+        if(self.model == None): raise Exception("please check model")
+
         self.outputHelper = ModelOuputHelper(self.model, self.datasetName ,preStr)
         self.outputHelper.drawModelImg()
         self.outputHelper.saveModelTxT()
@@ -249,3 +251,23 @@ class VGG16(BasicModel):
         x = layers.GlobalAveragePooling2D(data_format='channels_last')(x)
 
         return x
+
+
+class Inception(BasicModel):
+    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST') -> None:
+        super().__init__(datasetName, input_shape, classes)
+
+        self.model = self.__build()
+        self._BasicModel__createOutputHelper()   
+
+    def __build(self):
+        inputs = keras.Input(shape=self.input_shape)   
+        
+        x = None
+        pass
+    
+        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)
+
+        model = keras.Model(inputs=inputs, outputs=outputs , name="frank_Inception")
+        model.summary()
+        return model

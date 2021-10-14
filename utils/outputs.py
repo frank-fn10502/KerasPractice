@@ -105,7 +105,6 @@ class ModelOuputHelper:
         y_tick_list = np.append(y_tick_list ,yticks_end)
         plt.yticks( y_tick_list )
         
-
     def drawModelImg(self) -> None:
         '''
         使用 keras.utils.plot_model 畫出模型架構圖
