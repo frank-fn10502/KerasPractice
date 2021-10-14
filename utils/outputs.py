@@ -11,13 +11,13 @@ class ModelOuputHelper:
     處理神經網路模型的各種資料輸出，包含圖形、模型和文檔
     '''
 
-    def __init__(self, model=None, datasetName='None' ,preStr :str = None) -> None:
+    def __init__(self, model=None, datasetName='None' ,preStr :str = None ,main_directory = None) -> None:
         if(model == None):
             raise Exception("please check model")
         self.model = model
         self.preStr = preStr
 
-        self.main_directory = f"./result/{model.name}"
+        self.main_directory =  f"./{main_directory if main_directory != None else 'result'}/{model.name}"
         if not os.path.exists(self.main_directory):
             os.makedirs(self.main_directory)
 
