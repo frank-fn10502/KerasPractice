@@ -1,9 +1,9 @@
-from os import X_OK
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import activations
+from tensorflow.python.keras.layers.merge import add
 
 from utils.outputs import ModelOuputHelper
 
@@ -17,7 +17,7 @@ class BasicModel:
         self.classes = classes
 
         self.layer_scale = layers.Rescaling(scale=1./255)
-        self.layer_resizing = layers.Resizing(227, 227, interpolation='bilinear')
+        self.layer_resizing = layers.Resizing(224, 224, interpolation='bilinear')
 
     def getModel(self): return self.model
 
@@ -255,7 +255,7 @@ class VGG16(BasicModel):
 
 
 class InceptionV1(BasicModel):
-    def __init__(self, input_shape=(227, 227, 3), classes=10, datasetName='MNIST') -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST') -> None:
         super().__init__(datasetName, input_shape, classes)
 
         self.model = self.__build()
@@ -266,7 +266,7 @@ class InceptionV1(BasicModel):
         
         x = self.layer_scale(inputs)
         
-        x = layers.Conv2D(kernel_size=7 ,strides=2 ,filters=64 ,activation='relu')(x)
+        x = layers.Conv2D(kernel_size=7 ,strides=2 ,filters=64 ,activation='relu' ,padding='same')(x)
         #https://keras.io/api/layers/pooling_layers/max_pooling2d/
         x = layers.MaxPool2D(pool_size=3 ,strides=2, padding='same')(x)
         x = layers.Conv2D(kernel_size=3, strides=1, filters=192, padding='same', activation='relu')(x)
@@ -299,7 +299,7 @@ class InceptionV1(BasicModel):
     
         outputs = layers.Dense(self.classes, activation=activations.softmax)(x)
 
-        model = keras.Model(inputs=inputs, outputs=outputs , name="frank_Inception")
+        model = keras.Model(inputs=inputs, outputs=outputs , name="frank_InceptionV1")
         model.summary()
         return model
 
@@ -321,3 +321,66 @@ class InceptionV1(BasicModel):
         pool = layers.Conv2D(kernel_size=(1, 1), filters=c1x1_pool, padding="same", activation='relu' )(pool)
 
         return layers.concatenate([b1x1, b3x3, b5x5 ,pool],axis=3)
+
+
+class ResNet50(BasicModel):
+    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST') -> None:
+        super().__init__(datasetName, input_shape, classes)
+
+        self.model = self.__build()
+        self._BasicModel__createOutputHelper()  
+
+    def __build(self):
+        inputs = keras.Input(shape=self.input_shape)   
+        
+        x = self.layer_scale(inputs) 
+        x = self.layer_resizing(x)
+
+        x = layers.Conv2D(kernel_size=(7, 7), filters=64, strides=2, padding='same')(x)
+        x = layers.MaxPool2D(pool_size=(3,3),strides=2 ,padding='same')(x)
+
+        x = self.__residualBottleneckBlock(x, 64, 64, 256, changeShortcutChannel=True)
+        for i in range(2): x = self.__residualBottleneckBlock(x ,64,64,256)
+
+        x = self.__residualBottleneckBlock(x, 128, 128, 512, needDownSample=True)
+        for i in range(3): x = self.__residualBottleneckBlock(x ,128, 128, 512)
+
+        x = self.__residualBottleneckBlock(x, 256, 256, 1024, needDownSample=True)
+        for i in range(5): x = self.__residualBottleneckBlock(x ,256, 256, 1024)
+
+        x = self.__residualBottleneckBlock(x, 512, 512, 2048, needDownSample=True)
+        for i in range(3): x = self.__residualBottleneckBlock(x ,512, 512, 2048)
+
+        x = layers.GlobalAveragePooling2D()(x)
+
+
+        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)      
+
+        model = keras.Model(inputs=inputs, outputs=outputs , name="frank_ResNet50")
+        model.summary()
+        return model
+
+    def __residualBottleneckBlock(self, pre_x, *f, needDownSample=False, changeShortcutChannel=False):
+        '''
+        *f : conv1x1_filter ,conv3x3_filter ,conv1x1_filter
+        '''
+        (cf1 ,cf2 ,cf3) = f
+        x = self.__BN_relu_conv(pre_x, kernel_size=(1,1) , filters=cf1 
+                                     , stride=2 if needDownSample else 1)
+        x = self.__BN_relu_conv(x,filters=cf2)
+        x = self.__BN_relu_conv(x, kernel_size=(1,1) ,filters=cf3)
+
+        if needDownSample or changeShortcutChannel:
+            #filters 要使用最終的輸出才可相加
+            pre_x = self.__BN_relu_conv(pre_x, kernel_size=(1,1), filters=cf3, 
+                                        stride=2 if needDownSample else 1)
+
+        return layers.Add()([pre_x ,x])
+
+    def __BN_relu_conv(self, x, filters, kernel_size=(3, 3), stride=1):
+        x = layers.BatchNormalization()(x)
+        x = layers.ReLU()(x)
+        x = layers.Conv2D(kernel_size=kernel_size,
+                          filters=filters, strides=stride ,padding='same')(x)
+
+        return x
