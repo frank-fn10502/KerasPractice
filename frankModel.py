@@ -17,7 +17,7 @@ class BasicModel:
         self.classes = classes
 
         self.layer_scale = layers.Rescaling(scale=1./255)
-        self.layer_resizing = layers.Resizing(227, 227, interpolation='bilinear')
+        self.layer_resizing = layers.Resizing(224, 224, interpolation='bilinear')
 
     def getModel(self): return self.model
 
@@ -160,7 +160,7 @@ class VGG16(BasicModel):
 
        
         x = self.layer_scale(inputs)
-        # x = self.layer_resizing(x)
+        x = self.layer_resizing(x)
 
         x = self.__buildConv(x)
 
@@ -265,6 +265,7 @@ class InceptionV1(BasicModel):
         inputs = keras.Input(shape=self.input_shape)   
         
         x = self.layer_scale(inputs)
+        x = self.layer_resizing(x)
         
         x = layers.Conv2D(kernel_size=7 ,strides=2 ,filters=64 ,activation='relu')(x)
         #https://keras.io/api/layers/pooling_layers/max_pooling2d/
