@@ -1,5 +1,6 @@
 
 import tensorflow as tf
+from keras import backend as K
 # my custom lib
 from frankModel import LeNet
 from frankModel import AlexNet
@@ -62,5 +63,4 @@ except:
     print("Unexpected error:", sys.exc_info()[0])
 
 finally:
-    from keras import backend as K
     K.clear_session()
