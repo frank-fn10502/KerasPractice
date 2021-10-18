@@ -18,7 +18,7 @@ class BasicModel:
         self.main_directory = main_directory
 
         self.layer_scale = layers.Rescaling(scale=1./255)
-        self.layer_resizing = layers.Resizing(resize, interpolation='bilinear')
+        self.layer_resizing = layers.Resizing(*resize, interpolation='bilinear')
 
     def getModel(self): return self.model
 
@@ -37,7 +37,7 @@ class BasicModel:
 
 class LeNet(BasicModel):
     def __init__(self, input_shape=(32, 32, 1), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory)
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
         self.model = self.__build()
         self._BasicModel__createOutputHelper()
@@ -77,7 +77,7 @@ class LeNet(BasicModel):
 
 class AlexNet(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,resize=(227, 227) ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes,resize ,main_directory)
+        super().__init__(datasetName, input_shape, classes,resize ,main_directory=main_directory)
 
         self.model = self.__build()
         self._BasicModel__createOutputHelper()
@@ -151,7 +151,7 @@ class AlexNet(BasicModel):
 
 class VGG16(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,flexImgSize = False ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory)
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
         self.model = self.__build(flexImgSize)
         self._BasicModel__createOutputHelper(preStr='flexImgSize' if flexImgSize else 'fixedImgSize')
@@ -257,7 +257,7 @@ class VGG16(BasicModel):
 
 class InceptionV1(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory)
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
         self.model = self.__build()
         self._BasicModel__createOutputHelper()   
@@ -327,7 +327,7 @@ class InceptionV1(BasicModel):
 
 class ResNet50(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory)
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
         self.model = self.__build()
         self._BasicModel__createOutputHelper()  

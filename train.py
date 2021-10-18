@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 from keras import backend as K
 # my custom lib
@@ -31,7 +30,7 @@ try:
 
     with strategy.scope():
         #取得模型架構
-        MyNet = ResNet50(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]))
+        MyNet = LeNet(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]))
         
         MyNet.model.compile(
             #learning_rate=0.01

@@ -15,73 +15,70 @@ from small_dataset import MNIST
 from small_dataset import CIFAR10
 from small_dataset import CIFAR100
 
-def getModel():
-    main_directory = './batchResult'
+def waitForNextModel(n):
+    for i in range(n):
+        print('.',end='')
+        time.sleep(1)
+    print('\nstart Next\n')
+
+def getModel(modelNmae : str):
+    main_directory = 'batchResult'
     model : BasicModel = None
-    if 'LeNet':
+    if modelNmae == 'LeNet':
         model =  LeNet(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
-    elif 'AlexNet':
+    elif modelNmae == 'AlexNet':
         model =  AlexNet(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
-    elif 'VGG16':
+    elif modelNmae == 'VGG16':
         model =  VGG16(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
-    elif 'VGG16_flex':
+    elif modelNmae == 'VGG16_flex':
         model =  VGG16(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),flexImgSize=True,main_directory = main_directory)
-    elif 'InceptionV1':
+    elif modelNmae == 'InceptionV1':
         model =  InceptionV1(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory) 
-    elif 'ResNet50':
+    elif modelNmae == 'ResNet50':
         model =  ResNet50(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
 
     return model
 
-def trainOneModel(model: BasicModel):
-    try:
-        initial_learning_rate = 1e-4
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            initial_learning_rate,
-            decay_steps=1000,
-            decay_rate=0.96,
-            staircase=True)
+def trainOneModel(modelNmae: str):
+    initial_learning_rate = 1e-4
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        initial_learning_rate,
+        decay_steps=1000,
+        decay_rate=0.96,
+        staircase=True)
 
-        #訓練
-        # compile  #在每層 layer 和 compile 都可自動尋找超參數
-        strategy = tf.distribute.MirroredStrategy()
-        print(f"Number of devices: {strategy.num_replicas_in_sync}")
+    #訓練
+    # compile  #在每層 layer 和 compile 都可自動尋找超參數
+    strategy = tf.distribute.MirroredStrategy()
+    print(f"Number of devices: {strategy.num_replicas_in_sync}")
 
-        with strategy.scope():
-            #取得模型架構
-            # MyNet = model(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]))
-            MyNet = model
-            
-            MyNet.model.compile(
-                #learning_rate=0.01
-                optimizer= tf.keras.optimizers.Adam(learning_rate=lr_schedule,epsilon=1e-09),
-                loss= 'categorical_crossentropy',
-                metrics=['accuracy']
-            )
-
-        # fit
-        history  = \
-        MyNet.model.fit(
-            x = dataset.train_x,
-            y = dataset.train_y,
-            epochs = 30,
-            batch_size = 64,
-            validation_data = (dataset.test_x ,dataset.test_y)
+    with strategy.scope():
+        #取得模型架構
+        # MyNet = model(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]))
+        MyNet : BasicModel = getModel(modelNmae)
+        
+        MyNet.model.compile(
+            #learning_rate=0.01
+            optimizer= tf.keras.optimizers.Adam(learning_rate=lr_schedule,epsilon=1e-09),
+            loss= 'categorical_crossentropy',
+            metrics=['accuracy']
         )
 
+    # fit
+    history  = \
+    MyNet.model.fit(
+        x = dataset.train_x,
+        y = dataset.train_y,
+        epochs = 30,
+        batch_size = 64,
+        validation_data = (dataset.test_x ,dataset.test_y)
+    )
 
-        MyNet.outputHelper.saveModel()
 
-        # print(history.history)
-        MyNet.outputHelper.drawTrainProcess(history.history)
+    MyNet.outputHelper.saveModel()
 
-    except:
-        import sys
-        # sys.exc_info()[0] 就是用來取出except的錯誤訊息的方法
-        print("Unexpected error:", sys.exc_info()[0])
-
-    finally:
-        K.clear_session()
+    # print(history.history)
+    MyNet.outputHelper.drawTrainProcess(history.history)
 
 dataset = CIFAR10(info=True).addChannel().tocategorical().Done()
 
@@ -91,5 +88,5 @@ BatchModel:list = \
 ]
 
 for modelNmae in BatchModel:
-    trainOneModel(getModel(modelNmae))
-    time.sleep(10)
+    trainOneModel(modelNmae)
+    waitForNextModel(10)
