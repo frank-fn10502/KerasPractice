@@ -8,6 +8,32 @@ from tensorflow.python.keras.layers.merge import add
 from utils.outputs import ModelOuputHelper
 
 
+# from effNetV2 code #survival_prob 預設 0.8 by frank
+def drop_connect(inputs, is_training = True, survival_prob = 0.8):
+  """Drop the entire conv with given survival probability."""
+  # "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+  if not is_training:
+    return inputs
+
+  # Compute tensor.
+  batch_size = tf.shape(inputs)[0]
+  random_tensor = survival_prob
+  random_tensor += tf.random.uniform([batch_size, 1, 1, 1], dtype=inputs.dtype)
+  binary_tensor = tf.floor(random_tensor)
+  # Unlike conventional way that multiply survival_prob at test time, here we
+  # divide survival_prob at training time, such that no addition compute is
+  # needed at test time.
+  output = inputs / survival_prob * binary_tensor
+  return output
+
+
+#
+# tensorflow.python.framework.ops.EagerTensor' object has no attribute '_keras_history'
+#為了解決以上的錯誤(主要是畫圖時會需要用到該屬性)
+class StochasticDropout(layers.Layer):
+    def call(self, inputs):
+        return drop_connect(inputs)
+
 class BasicModel:
     def __init__(self, datasetName="None", input_shape=(None, None, 3), classes=10 ,resize=(224, 224) ,main_directory = None) -> None:
         self.model = None
@@ -386,3 +412,115 @@ class ResNet50(BasicModel):
                           filters=filters, strides=stride ,padding='same')(x)
 
         return x
+
+
+class EfficientNetV2_S(BasicModel):
+    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
+
+        self.dropout = .2
+
+        self.model = self.__build()
+        self._BasicModel__createOutputHelper()  
+
+    def __build(self):
+        inputs = keras.Input(shape=self.input_shape)   
+
+        x = inputs
+
+        #stem 輸出channel 和 下一層的 input channel 相同
+        x = self.__conv_BN_silu_(x ,stride=2 ,filters=24) 
+
+        #
+        x = self.__Fused_MBConv(x, 24, 24, 1, 3, 1, 2)
+        x = self.__Fused_MBConv(x, 24, 38, 4, 3, 2, 4)
+        x = self.__Fused_MBConv(x, 48, 64, 4, 3, 2, 4)
+        x = self.__MBConv(x, 64, 128, 4, 3, 2, .25, 6)
+        x = self.__MBConv(x, 128, 160, 6, 3, 1, .25, 9)
+        x = self.__MBConv(x, 160, 256, 6, 3, 2, .25, 15)
+
+        # head
+        x = self.__conv_BN_silu_(x ,kernel_size=1 ,stride=1 ,filters=1280) 
+        x = layers.GlobalAvgPool2D()(x)
+        x = layers.Dropout(self.dropout)(x)
+
+
+        #output
+        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)      
+
+        model = keras.Model(inputs=inputs, outputs=outputs , name="EfficientNetV2_S")
+        model.summary()
+        return model        
+
+    def __MBConv(self, inputs, input_filters, output_filters, expansion_ratio, kernel_size, strides, se_ratio, number_layers):
+        x = inputs
+        for i in range(number_layers):
+            inputs = x
+            x = self.__conv_BN_silu_(x, input_filters * expansion_ratio ,kernel_size=1)
+            x = self.__depthwiseconv_BN_silu_(x ,kernel_size=kernel_size,stride=strides)
+
+            x = self.__se(x, input_filters * se_ratio, input_filters * expansion_ratio)
+
+            x = layers.Conv2D(kernel_size=1 ,strides=1 ,filters=output_filters,padding='same')(x)
+            x = layers.BatchNormalization()(x)
+
+            x = self.__residual(inputs ,x ,strides ,input_filters ,output_filters )
+            
+        return x
+        
+    def __Fused_MBConv(self, inputs, input_filters, output_filters , expansion_ratio, kernel_size, strides, number_layers):
+        x = inputs
+        for i in range(number_layers):
+            inputs = x
+            x = self.__conv_BN_silu_(
+                x, input_filters * expansion_ratio, stride=strides, kernel_size=kernel_size)
+
+            #se 似乎沒有 se block
+
+            x = self.__residual(inputs, x, strides, input_filters, output_filters)
+
+        return x
+
+    def __se(self ,x ,filters ,output_filters):
+        # 預設不用
+        # x = layers.AveragePooling2D()(x) 應該要用 avg_pooling
+
+        x = layers.Conv2D(kernel_size=1 ,strides= 1 ,filters=filters, padding='same')(x)
+        x = tf.nn.silu(x)
+
+        x = layers.Conv2D(kernel_size=1 ,strides=1 ,filters=output_filters, padding='same')(x)
+        x = activations.sigmoid(x)
+
+        return x
+
+    def __conv_BN_silu_(self, x ,filters, kernel_size=(3, 3), stride=1 ,padding='same'):
+        x = layers.Conv2D(kernel_size=kernel_size,
+                          filters=filters, strides=stride ,padding=padding)(x)
+        x = layers.BatchNormalization()(x)
+        x = tf.nn.silu(x)
+
+
+        return x
+    
+    def __depthwiseconv_BN_silu_(self, x , kernel_size=(3, 3), stride=1 ,padding='same'):
+        x = layers.DepthwiseConv2D(kernel_size=kernel_size, strides=stride ,padding=padding)(x)
+        x = layers.BatchNormalization()(x)
+        x = tf.nn.silu(x)
+
+
+        return x
+
+    def __residual(self, inputs, x, strides , input_filters ,output_filters):
+        if (strides == 1 and input_filters == output_filters):
+            # 在 keras conv2d 中 paddind == 'same' : 公式 output_size = w / s
+            # 在 effencientnet 中 input 和 output 維度都要相同才做相加(code 這樣寫)
+
+            # x = layers.Dropout(self.dropout)(x) 不太一樣
+
+
+            drop = StochasticDropout()
+            x = drop(x) #需要繼承 layers.Layer
+            x = layers.Add()([inputs ,x])
+
+        return x
+
