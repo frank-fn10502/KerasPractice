@@ -446,7 +446,7 @@ class EfficientNetV2_S(BasicModel):
 
 
         #output
-        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)      
+        outputs = layers.Dense(1000, activation=activations.softmax)(x)      
 
         model = keras.Model(inputs=inputs, outputs=outputs , name="EfficientNetV2_S")
         model.summary()
@@ -455,7 +455,6 @@ class EfficientNetV2_S(BasicModel):
     def __MBConv(self, inputs, input_filters, output_filters, expansion_ratio, kernel_size, strides, se_ratio, number_layers):
         x = inputs
         for i in range(number_layers):
-            inputs = x
             x = self.__conv_BN_silu_(x, input_filters * expansion_ratio ,kernel_size=1)
             x = self.__depthwiseconv_BN_silu_(x ,kernel_size=kernel_size,stride=strides)
 
@@ -465,19 +464,32 @@ class EfficientNetV2_S(BasicModel):
             x = layers.BatchNormalization()(x)
 
             x = self.__residual(inputs ,x ,strides ,input_filters ,output_filters )
+
+            strides = 1 # 根據 code 決定的
+            input_filters = output_filters # 根據 code 決定的
+            inputs = x
             
         return x
         
     def __Fused_MBConv(self, inputs, input_filters, output_filters , expansion_ratio, kernel_size, strides, number_layers):
         x = inputs
         for i in range(number_layers):
-            inputs = x
-            x = self.__conv_BN_silu_(
-                x, input_filters * expansion_ratio, stride=strides, kernel_size=kernel_size)
+            if(expansion_ratio != 1):
+                x = self.__conv_BN_silu_(
+                    x, input_filters * expansion_ratio, stride=strides, kernel_size=kernel_size)
 
             #se 似乎沒有 se block
 
+            k_s = 1 if expansion_ratio != 1 else kernel_size
+            s = 1 if expansion_ratio != 1 else strides
+            x = layers.Conv2D(kernel_size=k_s ,strides=s ,filters= output_filters ,padding='same')(x)
+            x = layers.BatchNormalization()(x)
+
             x = self.__residual(inputs, x, strides, input_filters, output_filters)
+
+            strides = 1 # 根據 code 決定的
+            input_filters = output_filters # 根據 code 決定的
+            inputs = x
 
         return x
 
