@@ -6,6 +6,7 @@ from tensorflow.keras import activations
 from tensorflow.python.keras.layers.merge import add
 
 from utils.outputs import ModelOuputHelper
+from utils.utils import VersionMark as verMark
 
 
 # from effNetV2 code #survival_prob 預設 0.8 by frank
@@ -33,42 +34,40 @@ class StochasticDropout(layers.Layer):
     def call(self, inputs):
         return drop_connect(inputs)
 
+
 class BasicModel:
-    def __init__(self, datasetName="None", input_shape=(None, None, 3), classes=10 ,resize=(224, 224) ,main_directory = None) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10, resize=(224, 224)) -> None:
+        #init variable 
         self.model = None
         self.outputHelper = None
-        self.datasetName = datasetName
         self.input_shape = input_shape
         self.classes = classes
-        self.main_directory = main_directory
-
         self.layer_scale = layers.Rescaling(scale=1./255)
         self.layer_resizing = layers.Resizing(*resize, interpolation='bilinear')
-        self.preStr = self.preStr or None # 會由繼承的 class 設定初始值。
 
-        self.model = self.__build()
-        self.__createOutputHelper()
+        #由繼承 class 給預設值 or 直接給值
+        self.verMark = self.preStr if hasattr(self, 'verMark') else verMark()
+
+        #建立 keras model
+        self.model = self.build()
+        #self.outputHelper = outputHelper #ModelOuputHelper(self.model, self.verMark, self.datasetName, self.main_directory)
+        # 需要在建立時再自行呼叫  self.outputHelper.seveModelArchitecture
+        # 或者應該將該項抽出?
 
     def getModel(self): return self.model
 
-    def __createOutputHelper(self):
+    def build(self):
         '''
-        需要先建立 model 再呼叫此方法
-            self._BasicModel__createOutputHelper()
-        
+        由繼承的 class 實作
         '''
-        if(self.model == None): raise Exception("please check model")
-
-        self.outputHelper = ModelOuputHelper(self.model, self.datasetName ,self.preStr ,self.main_directory)
-        self.outputHelper.drawModelImg()
-        self.outputHelper.saveModelTxT()
+        pass
 
 
 class LeNet(BasicModel):
-    def __init__(self, input_shape=(32, 32, 1), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
+    def __init__(self, input_shape=(32, 32, 1), classes=10) -> None:
+        super().__init__(input_shape, classes)
 
-    def __build(self) -> keras.Model:
+    def build(self) -> keras.Model:
         inputs = keras.Input(shape=self.input_shape)
 
         # 數值縮成 0 ~ 1 之間
@@ -102,10 +101,10 @@ class LeNet(BasicModel):
 
 
 class AlexNet(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,resize=(227, 227) ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes,resize ,main_directory=main_directory)
+    def __init__(self, input_shape=(None, None, 3), classes=10, resize=(227, 227)) -> None:
+        super().__init__(input_shape, classes,resize)
 
-    def __build(self):
+    def build(self):
         inputs = keras.Input(shape=self.input_shape)
 
         #preprocessing layer
@@ -173,12 +172,13 @@ class AlexNet(BasicModel):
 
 
 class VGG16(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,flexImgSize = False ,main_directory = None) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10, flexImgSize=False) -> None:
         self.flexImgSize = flexImgSize
-        self.preStr = 'flexImgSize' if flexImgSize else 'fixedImgSize'
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
+        self.verMark = verMark()
+        self.verMark.badge = 'flexImgSize' if flexImgSize else 'fixedImgSize'
+        super().__init__(input_shape, classes)
 
-    def __build(self):
+    def build(self):
         inputs = keras.Input(shape=self.input_shape)        
 
        
@@ -278,10 +278,10 @@ class VGG16(BasicModel):
 
 
 class InceptionV1(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
+    def __init__(self, input_shape=(None, None, 3), classes=10) -> None:
+        super().__init__(input_shape, classes)
 
-    def __build(self):
+    def build(self):
         inputs = keras.Input(shape=self.input_shape)   
         
         x = self.layer_scale(inputs)
@@ -345,10 +345,10 @@ class InceptionV1(BasicModel):
 
 
 class ResNet50(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
+    def __init__(self, input_shape=(None, None, 3), classes=10) -> None:
+        super().__init__(input_shape, classes)
 
-    def __build(self):
+    def build(self):
         inputs = keras.Input(shape=self.input_shape)   
         
         x = self.layer_scale(inputs) 
@@ -405,13 +405,12 @@ class ResNet50(BasicModel):
 
 
 class EfficientNetV2_S(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10) -> None:
         self.dropout = .2
 
+        super().__init__(input_shape, classes)
 
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
-
-    def __build(self):
+    def build(self):
         inputs = keras.Input(shape=self.input_shape)   
 
         x = inputs
