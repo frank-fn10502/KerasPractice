@@ -1,10 +1,8 @@
-import os
 import datetime
 import matplotlib.pyplot as plt
-import tensorflow as tf
 import tensorflow.keras as keras
 from pathlib import Path
-
+import json
 import numpy as np
 import sys
 
@@ -28,7 +26,7 @@ class ModelOuputHelper:
         self.model_architecture_dir.mkdir(parents=True, exist_ok=True)
         self.train_result_dir.mkdir(parents=True, exist_ok=True)
 
-    def drawTrainProcess(self, history=None) -> None:
+    def saveTrainProcessImg(self, history=None) -> None:
         '''
         將訓練過程用 matplotlib.pyplot 畫成圖表
         :param history  傳入 model.fit() 的回傳值
@@ -53,10 +51,6 @@ class ModelOuputHelper:
         plt.show()
 
         print('drawTrainProcess... Done')
-
-        self.__saveTrainHistory(history)
-
-        print('saveTrainHistory... Done')
 
     def __pltOnePlot(self,title, pos, plotDatas: list,loc_mini:str = 'upper left'):
         '''
@@ -104,11 +98,15 @@ class ModelOuputHelper:
         y_tick_list = np.append(y_tick_list ,yticks_end)
         plt.yticks( y_tick_list )
         
-    def __saveTrainHistory(self ,history:dict): # 需要修改
-        path = self.train_result_dir / 'trainHistory.txt'
+    def saveTrainHistory(self ,history:dict):
+        '''
+        儲存 train 產生的 history 以備不時之需
+        '''
+        path = self.train_result_dir / 'trainHistory.json'
         with path.open('w') as f:
-            for k ,v in history.items():
-                print(f'{k}: {v} \n\r', file=f)
+            json.dump(history, f, ensure_ascii=False, indent=4)
+        
+        print('saveTrainHistory... Done')
 
     def saveModel(self):
         '''
@@ -119,6 +117,11 @@ class ModelOuputHelper:
         print('saveModel... Done')
     
     def seveModelArchitecture(self) -> None:
+        '''
+        儲存 model:
+            1. 文字 summary
+            2. 圖片 keras.utils.plot_model(simple & complete)
+        '''
         self.__drawModelImg()
         self.__saveModelTxT()
 
@@ -136,7 +139,7 @@ class ModelOuputHelper:
             to_file=(self.model_architecture_dir / 'complete-model-architecture.png').__str__,
             show_shapes=True,
         )
-        print('drawModelImg... Done')
+        print('saveModelImg... Done')
     
     def __saveModelTxT(self):
         '''
@@ -147,5 +150,4 @@ class ModelOuputHelper:
             self.model.summary(print_fn=lambda x: print(x, file=f))
 
         print('saveModelTxT... Done')
-
 
