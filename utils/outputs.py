@@ -6,7 +6,7 @@ import json
 import numpy as np
 import sys
 
-from utils import VersionMark 
+from .utils import VersionMark 
 
 class ModelOuputHelper:
     '''
@@ -16,9 +16,10 @@ class ModelOuputHelper:
     def __init__(self, model, verMark: VersionMark, datasetName='None', main_directory=None) -> None:
         if(model == None):
             raise Exception("please check model")
+
         self.model = model
 
-        self.main_directory = Path(main_directory or f'result') / model.name / Path(*verMark)
+        self.main_directory = Path(main_directory or f'result') / model.name / Path(*verMark.getMarkList())
 
         
         self.model_architecture_dir = self.main_directory 
@@ -47,7 +48,7 @@ class ModelOuputHelper:
             [history['val_accuracy'] ,'--'],
         ])
 
-        plt.savefig( (self.train_result_dir/'train-progress.jpg').__str__ )
+        plt.savefig( (self.train_result_dir/'train-progress.jpg').__str__() )
         plt.show()
 
         print('drawTrainProcess... Done')
@@ -112,7 +113,7 @@ class ModelOuputHelper:
         '''
         儲存 model 到預設位置(目前是儲存所有的資料)
         '''
-        self.model.save(self.train_result_dir.__str__)
+        self.model.save(self.train_result_dir.__str__())
 
         print('saveModel... Done')
     
@@ -131,12 +132,12 @@ class ModelOuputHelper:
         '''
         keras.utils.plot_model(
             self.model,
-            to_file=(self.model_architecture_dir / 'simple-model-architecture.png').__str__,
+            to_file=(self.model_architecture_dir / 'simple-model-architecture.png').__str__(),
             show_shapes=False,
         )
         keras.utils.plot_model(
             self.model,
-            to_file=(self.model_architecture_dir / 'complete-model-architecture.png').__str__,
+            to_file=(self.model_architecture_dir / 'complete-model-architecture.png').__str__(),
             show_shapes=True,
         )
         print('saveModelImg... Done')

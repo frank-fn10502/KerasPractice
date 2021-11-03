@@ -6,11 +6,11 @@ class VersionMark:
     可由呼叫者自行增加 attr
     '''
     def __init__(self) -> None:
-        self.ver = 'ver 1'
+        self.ver = '1'
         self.badge = None
 
     def getMarkList(self) -> list: 
         '''
         取得不為 None 的 attr list
         '''
-        return list(filter(lambda x: x, self.__dict__.items()))
+        return list( map(lambda y : f'{y[0]}_{y[1]}' , filter(lambda x: x[1], self.__dict__.items()) ))

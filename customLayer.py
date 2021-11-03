@@ -10,6 +10,8 @@ class StochasticDropout(layers.Layer):
     def call(self, inputs):
         """Drop the entire conv with given survival probability."""
         # "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
+        is_training = True
+        survival_prob = 0.8
         if not is_training:
             return inputs
 
