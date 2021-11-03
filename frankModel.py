@@ -27,7 +27,6 @@ def drop_connect(inputs, is_training = True, survival_prob = 0.8):
   return output
 
 
-#
 # tensorflow.python.framework.ops.EagerTensor' object has no attribute '_keras_history'
 #為了解決以上的錯誤(主要是畫圖時會需要用到該屬性)
 class StochasticDropout(layers.Layer):
@@ -45,10 +44,14 @@ class BasicModel:
 
         self.layer_scale = layers.Rescaling(scale=1./255)
         self.layer_resizing = layers.Resizing(*resize, interpolation='bilinear')
+        self.preStr = self.preStr or None # 會由繼承的 class 設定初始值。
+
+        self.model = self.__build()
+        self.__createOutputHelper()
 
     def getModel(self): return self.model
 
-    def __createOutputHelper(self ,preStr:str = None):
+    def __createOutputHelper(self):
         '''
         需要先建立 model 再呼叫此方法
             self._BasicModel__createOutputHelper()
@@ -56,7 +59,7 @@ class BasicModel:
         '''
         if(self.model == None): raise Exception("please check model")
 
-        self.outputHelper = ModelOuputHelper(self.model, self.datasetName ,preStr ,self.main_directory)
+        self.outputHelper = ModelOuputHelper(self.model, self.datasetName ,self.preStr ,self.main_directory)
         self.outputHelper.drawModelImg()
         self.outputHelper.saveModelTxT()
 
@@ -64,9 +67,6 @@ class BasicModel:
 class LeNet(BasicModel):
     def __init__(self, input_shape=(32, 32, 1), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
         super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
-
-        self.model = self.__build()
-        self._BasicModel__createOutputHelper()
 
     def __build(self) -> keras.Model:
         inputs = keras.Input(shape=self.input_shape)
@@ -104,9 +104,6 @@ class LeNet(BasicModel):
 class AlexNet(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,resize=(227, 227) ,main_directory = None) -> None:
         super().__init__(datasetName, input_shape, classes,resize ,main_directory=main_directory)
-
-        self.model = self.__build()
-        self._BasicModel__createOutputHelper()
 
     def __build(self):
         inputs = keras.Input(shape=self.input_shape)
@@ -177,12 +174,11 @@ class AlexNet(BasicModel):
 
 class VGG16(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,flexImgSize = False ,main_directory = None) -> None:
+        self.flexImgSize = flexImgSize
+        self.preStr = 'flexImgSize' if flexImgSize else 'fixedImgSize'
         super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
-        self.model = self.__build(flexImgSize)
-        self._BasicModel__createOutputHelper(preStr='flexImgSize' if flexImgSize else 'fixedImgSize')
-
-    def __build(self ,flexImgSize):
+    def __build(self):
         inputs = keras.Input(shape=self.input_shape)        
 
        
@@ -191,7 +187,7 @@ class VGG16(BasicModel):
 
         x = self.__buildConv(x)
 
-        if flexImgSize: x = self.__buildLastConv(x)
+        if self.flexImgSize: x = self.__buildLastConv(x)
         else: x = self.__buildFC(x)
         
 
@@ -285,9 +281,6 @@ class InceptionV1(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
         super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
-        self.model = self.__build()
-        self._BasicModel__createOutputHelper()   
-
     def __build(self):
         inputs = keras.Input(shape=self.input_shape)   
         
@@ -355,9 +348,6 @@ class ResNet50(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
         super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
-        self.model = self.__build()
-        self._BasicModel__createOutputHelper()  
-
     def __build(self):
         inputs = keras.Input(shape=self.input_shape)   
         
@@ -382,7 +372,7 @@ class ResNet50(BasicModel):
         x = layers.GlobalAveragePooling2D()(x)
 
 
-        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)      
+        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)
 
         model = keras.Model(inputs=inputs, outputs=outputs , name="frank_ResNet50")
         model.summary()
@@ -416,12 +406,10 @@ class ResNet50(BasicModel):
 
 class EfficientNetV2_S(BasicModel):
     def __init__(self, input_shape=(None, None, 3), classes=10, datasetName='MNIST' ,main_directory = None) -> None:
-        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
-
         self.dropout = .2
 
-        self.model = self.__build()
-        self._BasicModel__createOutputHelper()  
+
+        super().__init__(datasetName, input_shape, classes ,main_directory=main_directory)
 
     def __build(self):
         inputs = keras.Input(shape=self.input_shape)   
@@ -446,7 +434,7 @@ class EfficientNetV2_S(BasicModel):
 
 
         #output
-        outputs = layers.Dense(1000, activation=activations.softmax)(x)      
+        outputs = layers.Dense(self.classes, activation=activations.softmax)(x)      
 
         model = keras.Model(inputs=inputs, outputs=outputs , name="EfficientNetV2_S")
         model.summary()
