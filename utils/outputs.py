@@ -118,7 +118,11 @@ class ModelOuputHelper:
 
         print('saveModel... Done')
     
-    def drawModelImg(self) -> None:
+    def seveModelArchitecture(self) -> None:
+        self.__drawModelImg()
+        self.__saveModelTxT()
+
+    def __drawModelImg(self):
         '''
         使用 keras.utils.plot_model 畫出模型架構圖
         '''
@@ -134,7 +138,10 @@ class ModelOuputHelper:
         )
         print('drawModelImg... Done')
     
-    def saveModelTxT(self):
+    def __saveModelTxT(self):
+        '''
+        儲存 model.summary()
+        '''
         path = self.model_architecture_dir / 'model-architecture.txt'
         with path.open('w') as f:
             self.model.summary(print_fn=lambda x: print(x, file=f))
