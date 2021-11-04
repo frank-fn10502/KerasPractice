@@ -1,39 +1,33 @@
-import os
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import tensorflow.keras as keras
 import datetime
+import matplotlib.pyplot as plt
+import tensorflow.keras as keras
+from pathlib import Path
+import json
 import numpy as np
 import sys
+
+from .utils import VersionMark 
 
 class ModelOuputHelper:
     '''
     處理神經網路模型的各種資料輸出，包含圖形、模型和文檔
     '''
 
-    def __init__(self, model=None, datasetName='None' ,preStr :str = None ,main_directory = None) -> None:
+    def __init__(self, model, verMark: VersionMark, datasetName='None', main_directory=None) -> None:
         if(model == None):
             raise Exception("please check model")
+
         self.model = model
-        self.preStr = preStr
 
-        self.main_directory =  f"./{main_directory if main_directory != None else 'result'}/{model.name}"
-        if not os.path.exists(self.main_directory):
-            os.makedirs(self.main_directory)
+        self.main_directory = Path(main_directory or f'result') / model.name / Path(*verMark.getMarkList())
 
-        self.save_train_result_dir = f"{self.main_directory}{'' if datasetName == '' else '/' + datasetName}/{self.preStr + '/'  if self.preStr != None else ''}{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        if not os.path.exists(self.save_train_result_dir):
-            os.makedirs(self.save_train_result_dir)
+        
+        self.model_architecture_dir = self.main_directory 
+        self.train_result_dir = self.main_directory / datasetName / datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        self.model_architecture_dir.mkdir(parents=True, exist_ok=True)
+        self.train_result_dir.mkdir(parents=True, exist_ok=True)
 
-        self.model_image_dir = f"{self.save_train_result_dir}/model-images"
-        if not os.path.exists(self.model_image_dir):
-            os.makedirs(self.model_image_dir)
-
-        self.save_model_dir = f"{self.save_train_result_dir}/model"
-        if not os.path.exists(self.save_model_dir):
-            os.makedirs(self.save_model_dir)
-
-    def drawTrainProcess(self, history=None) -> None:
+    def saveTrainProcessImg(self, history=None) -> None:
         '''
         將訓練過程用 matplotlib.pyplot 畫成圖表
         :param history  傳入 model.fit() 的回傳值
@@ -54,14 +48,10 @@ class ModelOuputHelper:
             [history['val_accuracy'] ,'--'],
         ])
 
-        plt.savefig(f'{self.save_train_result_dir}/train-progress.jpg')
+        plt.savefig( (self.train_result_dir/'train-progress.jpg').__str__() )
         plt.show()
 
         print('drawTrainProcess... Done')
-
-        self.__saveTrainHistory(history)
-
-        print('saveTrainHistory... Done')
 
     def __pltOnePlot(self,title, pos, plotDatas: list,loc_mini:str = 'upper left'):
         '''
@@ -109,39 +99,56 @@ class ModelOuputHelper:
         y_tick_list = np.append(y_tick_list ,yticks_end)
         plt.yticks( y_tick_list )
         
-    def drawModelImg(self) -> None:
+    def saveTrainHistory(self ,history:dict):
         '''
-        使用 keras.utils.plot_model 畫出模型架構圖
+        儲存 train 產生的 history 以備不時之需
         '''
-        keras.utils.plot_model(
-            self.model,
-            to_file=f"{self.model_image_dir}/simple-model.png",
-            show_shapes=False,
-        )
-        keras.utils.plot_model(
-            self.model,
-            to_file=f"{self.model_image_dir}/complete-model.png",
-            show_shapes=True,
-        )
-        print('drawModelImg... Done')
+        path = self.train_result_dir / 'trainHistory.json'
+        with path.open('w') as f:
+            json.dump(history, f, ensure_ascii=False, indent=4)
+        
+        print('saveTrainHistory... Done')
 
     def saveModel(self):
         '''
         儲存 model 到預設位置(目前是儲存所有的資料)
         '''
-        self.model.save(f"{self.save_model_dir}")
+        self.model.save(self.train_result_dir.__str__())
 
         print('saveModel... Done')
+    
+    def seveModelArchitecture(self) -> None:
+        '''
+        儲存 model:
+            1. 文字 summary
+            2. 圖片 keras.utils.plot_model(simple & complete)
+        '''
+        self.__drawModelImg()
+        self.__saveModelTxT()
 
-    def saveModelTxT(self):
-        path = f'{self.save_train_result_dir}/model-arc.txt'
-        with open(path,'w') as f:
+    def __drawModelImg(self):
+        '''
+        使用 keras.utils.plot_model 畫出模型架構圖
+        '''
+        keras.utils.plot_model(
+            self.model,
+            to_file=(self.model_architecture_dir / 'simple-model-architecture.png').__str__(),
+            show_shapes=False,
+        )
+        keras.utils.plot_model(
+            self.model,
+            to_file=(self.model_architecture_dir / 'complete-model-architecture.png').__str__(),
+            show_shapes=True,
+        )
+        print('saveModelImg... Done')
+    
+    def __saveModelTxT(self):
+        '''
+        儲存 model.summary()
+        '''
+        path = self.model_architecture_dir / 'model-architecture.txt'
+        with path.open('w') as f:
             self.model.summary(print_fn=lambda x: print(x, file=f))
 
         print('saveModelTxT... Done')
 
-    def __saveTrainHistory(self ,history:dict):
-        path = f'{self.save_train_result_dir}/trainHistory.txt'
-        with open(path,'w') as f:
-            for k ,v in history.items():
-                print(f'{k}: {v} \n\r', file=f)
