@@ -43,8 +43,9 @@ class Flowers(FileDataset):
         '''
         pre_labels = self.labels[0]
 
-        self.labels = list( map(lambda x: [int(i) for i in x.tolist()] ,tf.keras.utils.to_categorical(self.labels)) )
-        self.labelMode = 'categorical'
+        # self.labels = list( map(lambda x: [int(i) for i in x.tolist()] ,tf.keras.utils.to_categorical(self.labels)) )
+        self.labels = list( map(lambda x: [int(i) for i in x ] ,tf.keras.utils.to_categorical(self.labels)) )
+        # self.labelMode = 'categorical'
 
         if self.info:
             print("one-hot encoder:")

@@ -24,4 +24,8 @@ RUN pip install matplotlib && \
 RUN pip install pydot && \
     apt install -y graphviz 
     
-    
+#https://github.com/tensorflow/addons
+RUN pip install tensorflow-addons==0.14.0 &&\
+
+    pip install pyyaml && \
+    pip install scipy

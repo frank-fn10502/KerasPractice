@@ -7,7 +7,7 @@ from tensorflow.python.keras.layers.merge import add
 
 
 from utils.utils import VersionMark as verMark
-from customLayer import StochasticDropout
+from customLayer import StochasticDropout ,distort_image
 
 
 class BasicModel:
@@ -389,6 +389,7 @@ class EfficientNetV2_S(BasicModel):
         inputs = keras.Input(shape=self.input_shape)   
 
         x = inputs
+        x = distort_image()(x)
 
         #stem 輸出channel 和 下一層的 input channel 相同
         x = self.__conv_BN_silu_(x ,stride=2 ,filters=24) 

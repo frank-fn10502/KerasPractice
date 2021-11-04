@@ -11,7 +11,7 @@ class SmallDataset(Dataset):
     最上層的 SmallDataset ，以下繼承都是使用 keras 內建再包裝
     '''
     def __init__(self, info: bool = False) -> None:
-        super.__init__()
+        super().__init__(info)
 
     def Done(self) -> 'SmallDataset':
         if self.info:

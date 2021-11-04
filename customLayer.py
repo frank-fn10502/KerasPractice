@@ -1,5 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
+from utils.other.autoaugment import distort_image_with_randaugment
 
 
 
@@ -25,3 +26,14 @@ class StochasticDropout(layers.Layer):
         # needed at test time.
         output = inputs / survival_prob * binary_tensor
         return output
+
+class distort_image(layers.Layer):
+    def __init__(self, trainable=True, name=None, dtype=None, dynamic=False, **kwargs):
+        super().__init__(trainable=trainable, name=name, dtype=dtype, dynamic=dynamic, **kwargs)
+        self.numLayers = 2
+        self.magnitude = 5
+
+    def call(self, inputs):
+        func = distort_image_with_randaugment
+        # return [func(img, self.numLayers, self.magnitude) for img in inputs]
+        return tf.map_fn(lambda img: func(img, self.numLayers, self.magnitude), inputs, dtype=tf.float32)

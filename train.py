@@ -15,7 +15,7 @@ from small_dataset import MNIST, SmallDataset
 from small_dataset import CIFAR10
 from small_dataset import CIFAR100
 
-from fileDaataset import Flowers
+from fileDataset import Flowers
 
 
 from utils.outputs import ModelOuputHelper
@@ -29,7 +29,7 @@ class Train:
         self.net = net
 
     def process(self ,dataset):
-        myNet = self.__prepareTrain()
+        myNet = self.__prepareTrain(dataset)
         outputHelper = ModelOuputHelper(myNet.model ,myNet.verMark ,dataset.className ,main_directory=self.mainDirectory)
 
         outputHelper.seveModelArchitecture() # 儲存架構
@@ -52,7 +52,7 @@ class Train:
 
         with strategy.scope():
             #取得模型架構
-            myNet = self.net(input_shape=(32,32,3) ,classes=len(dataset.train_y[0]))
+            myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]))
             
             myNet.model.compile(
                 #learning_rate=0.01
@@ -82,5 +82,5 @@ dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imag
 dataset.batchSize = 1
 dataset = dataset.tocategorical().Done()
 
-# train = Train(EfficientNetV2_S)
-# train.process(dataset)
+train = Train(EfficientNetV2_S)
+train.process(dataset)
