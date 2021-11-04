@@ -18,5 +18,6 @@
 		"hoovercj.vscode-power-mode",
 		"ms-toolsai.jupyter"
 	],
-	"runArgs": ["--gpus=all" ,"--privileged"],
+	"runArgs": ["--gpus=all" ,"--privileged" ,"--hostname=container-keras2_6"],
+	"remoteUser": "frank",
 }

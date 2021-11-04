@@ -1,7 +1,21 @@
 FROM tensorflow/tensorflow:2.6.0-gpu-jupyter
 
-RUN apt update -y && \
-    apt install -y \
+ARG USERNAME="frank"
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create the user https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user#_creating-a-nonroot-user
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    #
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && apt update \
+    && apt install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+
+RUN apt install -y \
     git \
     systemd \
     && pip3 install --upgrade pip 
@@ -15,7 +29,6 @@ RUN TZ=Asia/Taipei \
 
 RUN pip install matplotlib && \
     pip install autopep8 && \
-    
     #for docker
     pip install opencv-python-headless 
     
@@ -26,6 +39,9 @@ RUN pip install pydot && \
     
 #https://github.com/tensorflow/addons
 RUN pip install tensorflow-addons==0.14.0 &&\
-
     pip install pyyaml && \
     pip install scipy
+
+
+# [Optional] Set the default user. Omit if you want to keep the default as root.
+USER $USERNAME
