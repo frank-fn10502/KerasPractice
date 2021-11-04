@@ -3,28 +3,26 @@ import tensorflow.keras as keras
 import cv2
 import numpy as np
 
+from interface.Dataset import Dataset
 
-class Dataset:
-    '''
-    這是最初的 dataset
-    '''
 
+class SmallDataset(Dataset):
+    '''
+    最上層的 SmallDataset ，以下繼承都是使用 keras 內建再包裝
+    '''
     def __init__(self, info: bool = False) -> None:
-        self.info = info
-        self.className = type(self).__name__
-        if(info):
-            print(f"dataset: {self.__doc__} \n")
+        super.__init__()
 
-    def Done(self) -> 'Dataset':
+    def Done(self) -> 'SmallDataset':
         if self.info:
             print(
                 f"train_x:{self.train_x.shape} \ntrain_y:{self.train_y.shape} \ntest_x:{self.test_x.shape} \ntest_y:{self.test_y.shape}")
         return self
 
-    def addChannel(self) -> 'Dataset':
+    def addChannel(self) -> 'SmallDataset':
         return self
 
-    def tocategorical(self) -> 'Dataset':
+    def tocategorical(self) -> 'SmallDataset':
         '''
         label 轉換成 one-hot 編碼(train_y 和 test_y)
         '''
@@ -42,7 +40,7 @@ class Dataset:
 
         return self
 
-    def resizing(self, w: int = 32, h: int = 32) -> 'Dataset':
+    def resizing(self, w: int = 32, h: int = 32) -> 'SmallDataset':
         '''
         將圖片轉換成 w * h
         '''
@@ -68,7 +66,7 @@ class Dataset:
         return self
 
 
-class MNIST(Dataset):
+class MNIST(SmallDataset):
     '''
     使用 tensorflow.keras 取得的 MNIST 資料集(https://keras.io/api/datasets/mnist/) \n
     This is a dataset of 60,000 28x28 grayscale images of the 10 digits, along with a test set of 10,000 images
@@ -86,7 +84,7 @@ class MNIST(Dataset):
         return self
 
 
-class CIFAR10(Dataset):
+class CIFAR10(SmallDataset):
     '''
     使用 tensorflow.keras 取得的 CIFAR10 資料集(https://keras.io/api/datasets/cifar10/) \n
     The CIFAR-10 dataset consists of 60000 32x32 colour images in 10 classes, with 6000 images per class. \n
@@ -100,7 +98,7 @@ class CIFAR10(Dataset):
         super().__init__(info)
 
 
-class CIFAR100(Dataset):
+class CIFAR100(SmallDataset):
     '''
     使用 tensorflow.keras 取得的 CIFAR10 資料集(https://keras.io/api/datasets/cifar100/) \n
     This dataset is just like the CIFAR-10, except it has 100 classes containing 600 images each. \n

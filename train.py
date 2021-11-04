@@ -1,6 +1,7 @@
 import tensorflow as tf
 from keras import backend as K
 # my custom lib
+from frankModel import BasicModel
 from frankModel import LeNet
 from frankModel import AlexNet
 from frankModel import VGG16
@@ -9,9 +10,12 @@ from frankModel import ResNet50
 from frankModel import EfficientNetV2_S
 
 
-from small_dataset import MNIST, Dataset
+from interface.Dataset import Dataset
+from small_dataset import MNIST, SmallDataset
 from small_dataset import CIFAR10
 from small_dataset import CIFAR100
+
+from fileDaataset import Flowers
 
 
 from utils.outputs import ModelOuputHelper
@@ -36,7 +40,7 @@ class Train:
         outputHelper.saveTrainProcessImg(history)
         outputHelper.saveTrainHistory()
 
-    def __prepareTrain(self) -> Dataset:
+    def __prepareTrain(self ,dataset) -> BasicModel:
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
             self.initial_learning_rate,
             decay_steps=1000,
@@ -58,16 +62,23 @@ class Train:
             )
         return myNet
 
-    def __train(self ,myNet) -> dict:
-        return myNet.model.fit(
-                    x = dataset.train_x,
-                    y = dataset.train_y,
-                    epochs = self.epoch,
-                    batch_size = self.batchSize,
-                    validation_data = (dataset.test_x ,dataset.test_y)
-                )
+    def __train(self ,myNet ,dataset) -> dict:
+        if not dataset.isTfDataset:
+            return myNet.model.fit(
+                        x = dataset.train_x,
+                        y = dataset.train_y,
+                        epochs = self.epoch,
+                        batch_size = self.batchSize,
+                        validation_data = (dataset.test_x ,dataset.test_y)
+                    )
+        else:
+            return myNet.model.fit(
+                dataset.train,
+                epochs = self.epoch,
+                validation_data = dataset.validation
+            )
 
-dataset = CIFAR10(info=True).addChannel().tocategorical().Done()
+dataset = Flowers(info=True).tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
 train.process(dataset)
