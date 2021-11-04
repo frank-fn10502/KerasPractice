@@ -34,7 +34,7 @@ class Train:
 
         outputHelper.seveModelArchitecture() # 儲存架構
 
-        history = self.__train(myNet) #訓練
+        history = self.__train(myNet ,dataset) #訓練
 
         outputHelper.saveModel()
         outputHelper.saveTrainProcessImg(history)
@@ -78,7 +78,9 @@ class Train:
                 validation_data = dataset.validation
             )
 
-dataset = Flowers(info=True).tocategorical().Done()
+dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imagePath = 'dataset/flowers/')
+dataset.batchSize = 1
+dataset = dataset.tocategorical().Done()
 
-train = Train(EfficientNetV2_S)
-train.process(dataset)
+# train = Train(EfficientNetV2_S)
+# train.process(dataset)

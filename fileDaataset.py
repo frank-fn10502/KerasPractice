@@ -5,10 +5,12 @@ import scipy.io
 
 class FileDataset(Dataset):
     def __init__(self ,info: bool = False) -> None:
-        super.__init__(info)
+        super().__init__(info)
+        self.isTfDataset = True
 
     def Done(self):
         pass
+
 
 class Flowers(FileDataset):
     '''
@@ -33,15 +35,15 @@ class Flowers(FileDataset):
         self.train = None
         self.validation = None
 
-        super.__init__(info)
+        super().__init__(info)
 
     def tocategorical(self) -> 'FileDataset':
         '''
         label 轉換成 one-hot 編碼(train_y 和 test_y)
         '''
-        pre_labels = self.train_y[0]
+        pre_labels = self.labels[0]
 
-        self.labels = tf.keras.utils.to_categorical(self.labels)
+        self.labels = list( map(lambda x: [int(i) for i in x.tolist()] ,tf.keras.utils.to_categorical(self.labels)) )
         self.labelMode = 'categorical'
 
         if self.info:
