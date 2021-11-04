@@ -44,4 +44,5 @@ RUN pip install tensorflow-addons==0.14.0 &&\
 
 
 # [Optional] Set the default user. Omit if you want to keep the default as root.
+# 請注意中途更改 user 要注意資料夾權限的問題
 USER $USERNAME
