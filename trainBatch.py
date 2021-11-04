@@ -9,6 +9,7 @@ from frankModel import AlexNet
 from frankModel import VGG16
 from frankModel import InceptionV1
 from frankModel import ResNet50
+from frankModel import EfficientNetV2_S
 
 
 from small_dataset import MNIST
@@ -36,6 +37,8 @@ def getModel(modelNmae : str):
         model =  InceptionV1(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory) 
     elif modelNmae == 'ResNet50':
         model =  ResNet50(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
+    elif modelNmae == 'EfficientNetV2_S':
+        model =  EfficientNetV2_S(datasetName=dataset.className,input_shape=(32,32,3) ,classes=len(dataset.train_y[0]),main_directory = main_directory)
 
     return model
 
@@ -82,9 +85,13 @@ def trainOneModel(modelNmae: str):
 
 dataset = CIFAR10(info=True).addChannel().tocategorical().Done()
 
+# BatchModel:list = \
+# [ 
+#     'LeNet','AlexNet','VGG16','VGG16_flex','InceptionV1','ResNet50'
+# ]
 BatchModel:list = \
 [ 
-    'LeNet','AlexNet','VGG16','VGG16_flex','InceptionV1','ResNet50'
+    'EfficientNetV2_S','ResNet50'
 ]
 
 for modelNmae in BatchModel:
