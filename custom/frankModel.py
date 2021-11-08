@@ -6,8 +6,8 @@ from tensorflow.keras import activations
 from tensorflow.python.keras.layers.merge import add
 
 
-from utils.utils import VersionMark as verMark
-from customLayer import StochasticDropout 
+from .utils.utils import VersionMark as verMark
+from .layer import StochasticDropout 
 
 
 class BasicModel:

@@ -3,7 +3,7 @@ import tensorflow.keras as keras
 import cv2
 import numpy as np
 
-from interface.Dataset import Dataset
+from .interface.Dataset import Dataset
 
 
 class SmallDataset(Dataset):

@@ -6,7 +6,7 @@ import json
 import numpy as np
 import sys
 
-from .utils import VersionMark 
+from custom.utils.utils import VersionMark 
 
 class ModelOuputHelper:
     '''

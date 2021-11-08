@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from utils.other.autoaugment import distort_image_with_randaugment
+from .utils.other.autoaugment import distort_image_with_randaugment
 
 
 

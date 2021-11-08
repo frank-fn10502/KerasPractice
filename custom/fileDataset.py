@@ -1,4 +1,4 @@
-from interface.Dataset import Dataset
+from .interface.Dataset import Dataset
 import tensorflow as tf
 import scipy.io
 

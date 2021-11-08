@@ -87,4 +87,4 @@ dataset.imgSize = (256 ,256)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
-train.process(dataset)
+# train.process(dataset)
