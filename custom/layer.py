@@ -60,8 +60,8 @@ class DistortImage(layers.Layer):
         self.magnitude = (currentEpoch // self.__numPerStage) * self.__magnitudePerStage + self.__minMagnitude
 
     def setResizing(self ,currentEpoch):
-        self.imgSize = ((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[0],
-                        (currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[1])
+        self.imgSize = (int((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[0]),
+                        int((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[1]))
 
         self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
 

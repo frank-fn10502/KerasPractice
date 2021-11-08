@@ -27,8 +27,8 @@ class Train:
         history = self.__train(myNet ,dataset ,self.__callback(outputHelper)) #訓練
 
         #outputHelper.saveModel() #有 callback 狀況下也許不是很有必要?
-        outputHelper.saveTrainProcessImg(history)
         outputHelper.saveTrainHistory()
+        outputHelper.saveTrainProcessImg(history)
 
     def __prepareTrain(self ,dataset) -> BasicModel:
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
@@ -82,9 +82,9 @@ class Train:
 
 
 dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imagePath = 'dataset/flowers/')
-dataset.batchSize = 64
-dataset.imgSize = (256 ,256)
+dataset.batchSize = 16
+dataset.imgSize = (128 ,128)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
-# train.process(dataset)
+train.process(dataset)
