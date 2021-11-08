@@ -1,26 +1,14 @@
 import tensorflow as tf
-from keras import backend as K
+
 # my custom lib
-from frankModel import BasicModel
-from frankModel import LeNet
-from frankModel import AlexNet
-from frankModel import VGG16
-from frankModel import InceptionV1
-from frankModel import ResNet50
-from frankModel import EfficientNetV2_S
+from custom.frankModel import BasicModel, LeNet, AlexNet, VGG16, InceptionV1, ResNet50, EfficientNetV2_S
+from custom.interface.Dataset import Dataset
+from custom.small_dataset import MNIST, SmallDataset ,CIFAR10 ,CIFAR100
+from custom.fileDataset import Flowers
 
-
-from interface.Dataset import Dataset
-from small_dataset import MNIST, SmallDataset
-from small_dataset import CIFAR10
-from small_dataset import CIFAR100
-
-from fileDataset import Flowers
-
-
+from custom.callbacks import TestCallback
+from custom.layer import DistortImage
 from utils.outputs import ModelOuputHelper
-from customCallbacks import TestCallback
-from customLayer import DistortImage
 
 class Train:
     def __init__(self ,net) -> None:
@@ -94,8 +82,8 @@ class Train:
 
 
 dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imagePath = 'dataset/flowers/')
-dataset.batchSize = 32
-dataset.imgSize = (128 ,128)
+dataset.batchSize = 64
+dataset.imgSize = (256 ,256)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
