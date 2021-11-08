@@ -7,11 +7,11 @@ from tensorflow.python.keras.layers.merge import add
 
 
 from utils.utils import VersionMark as verMark
-from customLayer import StochasticDropout ,distort_image
+from customLayer import StochasticDropout 
 
 
 class BasicModel:
-    def __init__(self, input_shape=(None, None, 3), classes=10, resize=(224, 224)) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10, resize=(224, 224) ,image_preProcess = None) -> None:
         #init variable 
         self.model = None
         self.outputHelper = None
@@ -24,18 +24,23 @@ class BasicModel:
         self.verMark = self.preStr if hasattr(self, 'verMark') else verMark()
 
         #建立 keras model
-        self.model = self.build()
+        self.model = self.build(image_preProcess)
         #self.outputHelper = outputHelper #ModelOuputHelper(self.model, self.verMark, self.datasetName, self.main_directory)
         # 需要在建立時再自行呼叫  self.outputHelper.seveModelArchitecture
         # 或者應該將該項抽出?
 
     def getModel(self): return self.model
 
-    def build(self):
+    def build(self ,image_preProcess):
         '''
         由繼承的 class 實作
         '''
-        pass
+        inputs = keras.Input(shape=self.input_shape)   
+
+        x = inputs
+        if image_preProcess:
+            x = image_preProcess(x)
+        return inputs ,x
 
 
 class LeNet(BasicModel):
@@ -380,16 +385,13 @@ class ResNet50(BasicModel):
 
 
 class EfficientNetV2_S(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10 ,image_preProcess = None) -> None:
         self.dropout = .2
 
-        super().__init__(input_shape, classes)
+        super().__init__(input_shape, classes ,image_preProcess = image_preProcess)
 
-    def build(self):
-        inputs = keras.Input(shape=self.input_shape)   
-
-        x = inputs
-        x = distort_image()(x)
+    def build(self ,image_preProcess):
+        inputs ,x = super().build(image_preProcess)
 
         #stem 輸出channel 和 下一層的 input channel 相同
         x = self.__conv_BN_silu_(x ,stride=2 ,filters=24) 

@@ -8,14 +8,13 @@ from utils.other.autoaugment import distort_image_with_randaugment
 #為了解決以上的錯誤(主要是畫圖時會需要用到該屬性)
 class StochasticDropout(layers.Layer):
     # from effNetV2 code #survival_prob 預設 0.8 def drop_connect(inputs, is_training = True, survival_prob = 0.8):
-    def call(self, inputs):
+    def call(self, inputs ,training=None):
         """Drop the entire conv with given survival probability."""
         # "Deep Networks with Stochastic Depth", https://arxiv.org/pdf/1603.09382.pdf
-        is_training = True
-        survival_prob = 0.8
-        if not is_training:
+        if not training:
             return inputs
 
+        survival_prob = 0.8
         # Compute tensor.
         batch_size = tf.shape(inputs)[0]
         random_tensor = survival_prob
@@ -27,13 +26,35 @@ class StochasticDropout(layers.Layer):
         output = inputs / survival_prob * binary_tensor
         return output
 
-class distort_image(layers.Layer):
-    def __init__(self, trainable=True, name=None, dtype=None, dynamic=False, **kwargs):
-        super().__init__(trainable=trainable, name=name, dtype=dtype, dynamic=dynamic, **kwargs)
+
+# 使用 google effNetv2 的 code 包裝成 keras.layers
+class DistortImage(layers.Layer):
+    '''
+    random augment
+    '''
+    def __init__(self, totalEpoch = 0):
+        super().__init__()
         self.numLayers = 2
         self.magnitude = 5
+        self.__minMagnitude = 5
+        self.__maxMagnitude = 15
 
-    def call(self, inputs):
-        func = distort_image_with_randaugment
-        # return [func(img, self.numLayers, self.magnitude) for img in inputs]
-        return tf.map_fn(lambda img: func(img, self.numLayers, self.magnitude), inputs, dtype=tf.float32)
+        self.totalEpoch = totalEpoch
+        self.setStages(4)
+
+    def setStages(self ,n):
+        self.__stages = n
+        self.__numPerStage = self.totalEpoch // self.__stages
+        self.__magnitudePerStage = (self.__maxMagnitude - self.__minMagnitude) / self.__stages
+
+    def setNewMagnitude(self ,currentEpoch):
+        # (得到現在的 stage) * 每一個 stage 的增長數量 + 基礎的值
+        self.magnitude = (currentEpoch // self.__numPerStage) * self.__magnitudePerStage + self.__minMagnitude
+
+    def call(self, inputs ,training=None):
+        if training:
+            func = distort_image_with_randaugment
+            # return [func(img, self.numLayers, self.magnitude) for img in inputs]
+            return tf.map_fn(lambda img: func(img, self.numLayers, self.magnitude), inputs, dtype=tf.float32)
+        else:
+            return inputs

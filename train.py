@@ -19,6 +19,8 @@ from fileDataset import Flowers
 
 
 from utils.outputs import ModelOuputHelper
+from customCallbacks import TestCallback
+from customLayer import DistortImage
 
 class Train:
     def __init__(self ,net) -> None:
@@ -34,9 +36,9 @@ class Train:
 
         outputHelper.seveModelArchitecture() # 儲存架構
 
-        history = self.__train(myNet ,dataset) #訓練
+        history = self.__train(myNet ,dataset ,self.__callback(outputHelper)) #訓練
 
-        outputHelper.saveModel()
+        #outputHelper.saveModel() #有 callback 狀況下也許不是很有必要?
         outputHelper.saveTrainProcessImg(history)
         outputHelper.saveTrainHistory()
 
@@ -52,7 +54,7 @@ class Train:
 
         with strategy.scope():
             #取得模型架構
-            myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]))
+            myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]) ,image_preProcess = DistortImage(self.epoch))
             
             myNet.model.compile(
                 #learning_rate=0.01
@@ -62,24 +64,38 @@ class Train:
             )
         return myNet
 
-    def __train(self ,myNet ,dataset) -> dict:
+    def __train(self ,myNet ,dataset ,callbacks) -> dict:
         if not dataset.isTfDataset:
             return myNet.model.fit(
                         x = dataset.train_x,
                         y = dataset.train_y,
                         epochs = self.epoch,
                         batch_size = self.batchSize,
-                        validation_data = (dataset.test_x ,dataset.test_y)
+                        validation_data = (dataset.test_x ,dataset.test_y),
+                        callbacks = callbacks
                     )
         else:
             return myNet.model.fit(
                 dataset.train,
                 epochs = self.epoch,
-                validation_data = dataset.validation
+                validation_data = dataset.validation,
+                callbacks = callbacks
             )
 
+    def __callback(self ,outputHelper):
+        return [
+            tf.keras.callbacks.ModelCheckpoint(outputHelper.train_result_dir / '{epoch:02d}-{val_accuracy:.2f}.h5', 
+                                               save_weights_only=True,
+                                               monitor='val_accuracy',
+                                               mode='max',
+                                               save_best_only=True),
+            TestCallback()
+        ]
+
+
 dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imagePath = 'dataset/flowers/')
-dataset.batchSize = 1
+dataset.batchSize = 32
+dataset.imgSize = (128 ,128)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
