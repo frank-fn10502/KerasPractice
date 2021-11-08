@@ -35,26 +35,41 @@ class DistortImage(layers.Layer):
     def __init__(self, totalEpoch = 0):
         super().__init__()
         self.numLayers = 2
+
         self.magnitude = 5
         self.__minMagnitude = 5
         self.__maxMagnitude = 15
+        self.imgSize = (128 ,128)
+        self.__minImgSize = (128 ,128)
+        self.__maxImgSize = (300 ,300)
 
         self.totalEpoch = totalEpoch
         self.setStages(4)
+
+        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
 
     def setStages(self ,n):
         self.__stages = n
         self.__numPerStage = self.totalEpoch // self.__stages
         self.__magnitudePerStage = (self.__maxMagnitude - self.__minMagnitude) / self.__stages
 
+        self.__imgSizePerStage = (self.__maxImgSize[0] - self.__minImgSize[0]) / self.__stages
+
     def setNewMagnitude(self ,currentEpoch):
         # (得到現在的 stage) * 每一個 stage 的增長數量 + 基礎的值
         self.magnitude = (currentEpoch // self.__numPerStage) * self.__magnitudePerStage + self.__minMagnitude
 
+    def setResizing(self ,currentEpoch):
+        self.imgSize = ((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[0],
+                        (currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[1])
+
+        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
+
     def call(self, inputs ,training=None):
         if training:
+            inputs = self.layer_resizing(inputs) # 先 resizing 到目標大小
             func = distort_image_with_randaugment
-            # return [func(img, self.numLayers, self.magnitude) for img in inputs]
+            
             return tf.map_fn(lambda img: func(img, self.numLayers, self.magnitude), inputs, dtype=tf.float32)
         else:
             return inputs
