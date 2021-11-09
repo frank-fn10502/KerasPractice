@@ -9,6 +9,7 @@ from custom.fileDataset import Flowers
 from custom.callbacks import TestCallback
 from custom.layer import DistortImage
 from utils.outputs import ModelOuputHelper
+from custom.utils.utils import VersionMark as verMark
 
 class Train:
     def __init__(self ,net) -> None:
@@ -18,8 +19,8 @@ class Train:
         self.batchSize = 64
         self.net = net
 
-    def process(self ,dataset):
-        myNet = self.__prepareTrain(dataset)
+    def process(self ,dataset ,noPreProcess = False ,verMark = None):
+        myNet = self.__prepareTrain(dataset ,noPreProcess ,verMark)
         outputHelper = ModelOuputHelper(myNet.model ,myNet.verMark ,dataset.className ,main_directory=self.mainDirectory)
 
         outputHelper.seveModelArchitecture() # 儲存架構
@@ -27,10 +28,10 @@ class Train:
         history = self.__train(myNet ,dataset ,self.__callback(outputHelper)) #訓練
 
         #outputHelper.saveModel() #有 callback 狀況下也許不是很有必要?
-        outputHelper.saveTrainHistory()
+        outputHelper.saveTrainHistory(history)
         outputHelper.saveTrainProcessImg(history)
 
-    def __prepareTrain(self ,dataset) -> BasicModel:
+    def __prepareTrain(self ,dataset ,noPreProcess ,verMark = None) -> BasicModel:
         lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
             self.initial_learning_rate,
             decay_steps=1000,
@@ -42,7 +43,11 @@ class Train:
 
         with strategy.scope():
             #取得模型架構
-            myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]) ,image_preProcess = DistortImage(self.epoch))
+            myNet = None
+            if not noPreProcess:
+                myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]) ,image_preProcess = DistortImage(self.epoch) ,verMark = verMark)
+            else:
+                myNet = self.net(input_shape=(*dataset.imgSize,3) ,classes=len(dataset.labels[0]),verMark = verMark)
             
             myNet.model.compile(
                 #learning_rate=0.01
@@ -82,9 +87,13 @@ class Train:
 
 
 dataset = Flowers(info=True ,labelPath = 'dataset/flowers/imagelabels.mat' ,imagePath = 'dataset/flowers/')
-dataset.batchSize = 16
-dataset.imgSize = (128 ,128)
+dataset.batchSize = 512
+dataset.imgSize = (300 ,300)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
-train.process(dataset)
+
+myVerMark = verMark()
+myVerMark.badge = 'withImgScaleLayer'
+myVerMark.noPreProcess = 'True'
+train.process(dataset ,verMark=myVerMark ,noPreProcess = True)

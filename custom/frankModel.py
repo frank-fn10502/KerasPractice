@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import activations
+from tensorflow.python.keras import utils
 from tensorflow.python.keras.layers.merge import add
 
 
@@ -21,7 +22,7 @@ class BasicModel:
         self.layer_resizing = layers.Resizing(*resize, interpolation='bilinear')
 
         #由繼承 class 給預設值 or 直接給值
-        self.verMark = self.preStr if hasattr(self, 'verMark') else verMark()
+        self.verMark = self.verMark if hasattr(self, 'verMark') else verMark()
 
         #建立 keras model
         self.model = self.build(image_preProcess)
@@ -385,13 +386,16 @@ class ResNet50(BasicModel):
 
 
 class EfficientNetV2_S(BasicModel):
-    def __init__(self, input_shape=(None, None, 3), classes=10 ,image_preProcess = None) -> None:
+    def __init__(self, input_shape=(None, None, 3), classes=10 ,image_preProcess = None ,verMark: verMark = None) -> None:
         self.dropout = .2
+        self.verMark = verMark
 
         super().__init__(input_shape, classes ,image_preProcess = image_preProcess)
 
     def build(self ,image_preProcess):
         inputs ,x = super().build(image_preProcess)
+
+        x = self.layer_scale(x)
 
         #stem 輸出channel 和 下一層的 input channel 相同
         x = self.__conv_BN_silu_(x ,stride=2 ,filters=24) 

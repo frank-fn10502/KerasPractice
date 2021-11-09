@@ -46,7 +46,7 @@ class DistortImage(layers.Layer):
         self.totalEpoch = totalEpoch
         self.setStages(4)
 
-        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
+        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='nearest')
 
     def setStages(self ,n):
         self.__stages = n
@@ -63,7 +63,7 @@ class DistortImage(layers.Layer):
         self.imgSize = (int((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[0]),
                         int((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[1]))
 
-        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
+        self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='nearest')
 
     def call(self, inputs ,training=None):
         if training:

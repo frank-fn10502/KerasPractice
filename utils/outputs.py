@@ -32,6 +32,8 @@ class ModelOuputHelper:
         將訓練過程用 matplotlib.pyplot 畫成圖表
         :param history  傳入 model.fit() 的回傳值
         '''
+        modelHistory = history
+        history = history.history
         if(history == None):
             return
         plt.figure(figsize = (15,5))
@@ -99,10 +101,12 @@ class ModelOuputHelper:
         y_tick_list = np.append(y_tick_list ,yticks_end)
         plt.yticks( y_tick_list )
         
-    def saveTrainHistory(self ,history:dict):
+    def saveTrainHistory(self ,history):
         '''
         儲存 train 產生的 history 以備不時之需
         '''
+        modelHistory = history
+        history = history.history
         path = self.train_result_dir / 'trainHistory.json'
         with path.open('w') as f:
             json.dump(history, f, ensure_ascii=False, indent=4)
