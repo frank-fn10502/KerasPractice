@@ -64,6 +64,14 @@ class DistortImage(layers.Layer):
                         int((currentEpoch // self.__numPerStage) * self.__imgSizePerStage + self.__minImgSize[1]))
 
         self.layer_resizing = layers.Resizing(*self.imgSize, interpolation='bilinear')
+    def testFunc(self, inputs):
+        inputs = self.layer_resizing(inputs) # 先 resizing 到目標大小
+        # func = distort_image_with_randaugment
+        list = []
+        for img in inputs:
+            distort_image_with_randaugment(img, self.numLayers, self.magnitude)
+
+        return inputs     
 
     def call(self, inputs ,training=None):
         if training:
