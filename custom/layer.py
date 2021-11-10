@@ -67,12 +67,8 @@ class DistortImage(layers.Layer):
         
     def testFunc(self, inputs):
         inputs = self.layer_resizing(inputs) # 先 resizing 到目標大小
-        # func = distort_image_with_randaugment
-        list = []
-        for img in inputs:
-            distort_image_with_randaugment(img, self.numLayers, self.magnitude)
-
-        return inputs     
+        func = distort_image_with_randaugment
+        return tf.map_fn(lambda img: func(img, self.numLayers, self.magnitude), inputs, dtype=tf.float32)
 
     def call(self, inputs ,training=None):
         if training:
