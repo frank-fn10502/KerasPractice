@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import os
 # my custom lib
 from custom.frankModel import BasicModel, LeNet, AlexNet, VGG16, InceptionV1, ResNet50, EfficientNetV2_S
 from custom.interface.Dataset import Dataset
@@ -10,6 +10,9 @@ from custom.callbacks import TestCallback
 from custom.layer import DistortImage
 from utils.outputs import ModelOuputHelper
 from custom.utils.utils import VersionMark as verMark
+from custom.utils.other.learningRate import WarmUpAndCosineDecay
+
+os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 class Train:
     def __init__(self ,net) -> None:
@@ -32,11 +35,20 @@ class Train:
         outputHelper.saveTrainProcessImg(history)
 
     def __prepareTrain(self ,dataset ,noPreProcess ,verMark = None) -> BasicModel:
-        lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-            self.initial_learning_rate,
-            decay_steps=1000,
-            decay_rate=0.96,
-            staircase=True)
+        # lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+        #     self.initial_learning_rate,
+        #     decay_steps=1000,
+        #     decay_rate=0.96,
+        #     staircase=True)
+        class Args:
+            def __init__(self) -> None:
+                self.warmup_epochs = 10
+                self.train_batch_size = 512
+                self.learning_rate_scaling = 'linear'
+                self.train_epochs = 100
+                self.train_steps = None
+
+        lr_schedule = WarmUpAndCosineDecay(.2, len(dataset.labels), Args())
 
         strategy = tf.distribute.MirroredStrategy()
         print(f"Number of devices: {strategy.num_replicas_in_sync}")
@@ -51,7 +63,8 @@ class Train:
             
             myNet.model.compile(
                 #learning_rate=0.01
-                optimizer= tf.keras.optimizers.Adam(learning_rate=lr_schedule,epsilon=1e-09),
+                optimizer= tf.keras.optimizers.SGD(learning_rate=lr_schedule,
+                momentum=0.9),
                 loss= 'categorical_crossentropy',
                 metrics=['accuracy']
             )
@@ -92,8 +105,9 @@ dataset.imgSize = (300 ,300)
 dataset = dataset.tocategorical().Done()
 
 train = Train(EfficientNetV2_S)
+train.epoch = 30
+train.batchSize = dataset.batchSize
 
 myVerMark = verMark()
 myVerMark.badge = 'withImgScaleLayer'
-myVerMark.noPreProcess = 'True'
-train.process(dataset ,verMark=myVerMark ,noPreProcess = True)
+train.process(dataset ,verMark=myVerMark )

@@ -4,6 +4,8 @@ From: https://github.com/TranNhiem/multi_augmentation_strategies_self_supervised
 Author: https://github.com/TranNhiem
 '''
 
+import tensorflow as tf
+import math
 
 '''
 ********************************************
@@ -21,6 +23,16 @@ Training Configure
 # Section SimCLR Implementation Learning rate BYOL implementation
 # https://colab.research.google.com/drive/1MWgcDAqnB0zZlXz3fHIW0HLKwZOi5UBb?usp=sharing
 
+def get_train_steps(num_examples ,args):
+    """Determine the number of training steps."""
+    if args.train_steps is None:
+        train_steps = (num_examples * args.train_epochs //
+                       args.train_batch_size + 1)
+    else:
+        print("You Implement the args training steps")
+        train_steps = args.train_steps
+
+    return train_steps
 
 class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
     """Applies a warmup schedule on a given learning rate decay schedule.
@@ -56,7 +68,7 @@ class WarmUpAndCosineDecay(tf.keras.optimizers.schedules.LearningRateSchedule):
                 step / float(warmup_steps) * scaled_lr if warmup_steps else scaled_lr)
 
             # Cosine decay learning rate schedule
-            total_steps = get_train_steps(self.num_examples)
+            total_steps = get_train_steps(self.num_examples ,args)
             # TODO(srbs): Cache this object.
             cosine_decay = tf.keras.experimental.CosineDecay(
                 scaled_lr, total_steps - warmup_steps)
